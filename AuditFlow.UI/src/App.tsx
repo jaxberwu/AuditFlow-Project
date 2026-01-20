@@ -19,17 +19,28 @@ async function fetchAuditSummary(): Promise<AuditSummaryDto> {
 
 // Fetch threat details for a specific hostname - 获取指定主机的威胁详细信息
 function fetchThreatDetails(hostname: string): Promise<ThreatDetailsDto> {
-  return fetch(`http://localhost:5001/api/v1/threats/details/${encodeURIComponent(hostname)}`, {
+  const url = `http://localhost:5001/api/v1/threats/details/${encodeURIComponent(hostname)}`;
+  console.log('Fetching threat details from:', url); // Debug log - 调试日志
+  
+  return fetch(url, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
     },
   })
-    .then(res => {
+    .then(async res => {
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const errorText = await res.text();
+        console.error('API error response:', errorText); // Debug log - 调试日志
+        throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
       }
-      return res.json();
+      const data = await res.json();
+      console.log('API response:', data); // Debug log - 调试日志
+      return data;
+    })
+    .catch(err => {
+      console.error('Fetch error:', err); // Debug log - 调试日志
+      throw err;
     });
 }
 
@@ -39,13 +50,20 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Reset state when hostname changes - 当主机名改变时重置状态
+    setLoading(true);
+    setError(null);
+    setDetails(null);
+    
     fetchThreatDetails(hostname)
       .then(data => {
+        console.log('Threat details fetched:', data); // Debug log - 调试日志
         setDetails(data);
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        console.error('Error fetching threat details:', err); // Debug log - 调试日志
+        setError(err.message || 'Failed to fetch threat details');
         setLoading(false);
       });
   }, [hostname]);
@@ -136,7 +154,12 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
         overflow: 'auto',
         padding: '20px'
       }}
-      onClick={onClose}
+      onClick={(e) => {
+        // Only close if clicking the backdrop (not the modal content) - 只有点击背景时才关闭
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div 
         style={{ 
@@ -147,9 +170,13 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
           width: '100%',
           maxHeight: '90vh',
           overflow: 'auto',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          position: 'relative' // Ensure proper positioning - 确保正确定位
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          // Prevent closing when clicking inside modal - 点击模态框内部时防止关闭
+          e.stopPropagation();
+        }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>
@@ -178,7 +205,7 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
           </span>
         </div>
 
-        {details && details.cves.length > 0 ? (
+        {details && details.cves && details.cves.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead style={{ backgroundColor: '#f9fafb' }}>
@@ -199,11 +226,11 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
               </thead>
               <tbody>
                 {details.cves.map((cve, index) => (
-                  <tr key={cve.cve_ID} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb' }}>
-                    <td style={{ padding: '12px', fontWeight: '500', color: '#111827' }}>
+                  <tr key={`${cve.cve_ID}-${index}`} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb' }}>
+                    <td style={{ padding: '12px', fontWeight: '500', color: '#111827', userSelect: 'text' }}>
                       {cve.cve_ID}
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ padding: '12px', userSelect: 'text' }}>
                       <span style={{ 
                         padding: '4px 12px', 
                         fontSize: '12px', 
@@ -221,10 +248,10 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
                         {cve.severity}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', color: '#6b7280' }}>
+                    <td style={{ padding: '12px', color: '#6b7280', userSelect: 'text' }}>
                       {new Date(cve.detectedDate).toLocaleDateString()}
                     </td>
-                    <td style={{ padding: '12px', color: '#6b7280' }}>
+                    <td style={{ padding: '12px', color: '#6b7280', userSelect: 'text' }}>
                       {cve.remediation}
                     </td>
                   </tr>
@@ -232,11 +259,16 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
               </tbody>
             </table>
           </div>
-        ) : (
-          <p style={{ color: '#6b7280', textAlign: 'center', padding: '40px' }}>
-            No CVE threats found for this hostname.
-          </p>
-        )}
+        ) : details ? (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <p style={{ color: '#6b7280', marginBottom: '10px' }}>
+              No CVE threats found for hostname: <strong>{hostname}</strong>
+            </p>
+            <p style={{ color: '#9ca3af', fontSize: '12px' }}>
+              This device may not have any active threats, or the hostname may not match.
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -511,18 +543,23 @@ function AuditDashboardContent() {
                           {item.status}
                         </span>
                       </td>
-                      <td style={{ padding: '16px' }}>
-                        <span style={{ 
-                          padding: '4px 12px', 
-                          fontSize: '12px', 
-                          fontWeight: '600', 
-                          borderRadius: '9999px',
-                          backgroundColor: item.action === 'Replace' ? '#fef3c7' : '#e0e7ff',
-                          color: item.action === 'Replace' ? '#92400e' : '#3730a3'
-                        }}>
-                          {item.action}
-                        </span>
-                      </td>
+                                  <td style={{ padding: '16px' }}>
+                                    <span style={{ 
+                                      padding: '4px 12px', 
+                                      fontSize: '12px', 
+                                      fontWeight: item.action === 'Replace' ? 800 : 600, 
+                                      borderRadius: '9999px',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.05em',
+                                      backgroundColor: item.action === 'Replace' ? '#b91c1c' : '#e0e7ff', // 深红色背景用于 Replace - Use deep red background for Replace
+                                      color: item.action === 'Replace' ? '#fef2f2' : '#3730a3', // 浅色文字用于 Replace - Light text for Replace
+                                      boxShadow: item.action === 'Replace' 
+                                        ? '0 0 0 1px rgba(248, 113, 113, 0.8)' 
+                                        : 'none'
+                                    }}>
+                                      {item.action}
+                                    </span>
+                                  </td>
                       <td style={{ padding: '16px' }}>
                         {item.threatCount > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
