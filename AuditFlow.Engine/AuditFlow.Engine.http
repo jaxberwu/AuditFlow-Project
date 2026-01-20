@@ -1,0 +1,6 @@
+@AuditFlow.Engine_HostAddress = http://localhost:5050
+
+GET {{AuditFlow.Engine_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

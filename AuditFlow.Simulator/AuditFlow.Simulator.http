@@ -1,0 +1,6 @@
+@AuditFlow.Simulator_HostAddress = http://localhost:5168
+
+GET {{AuditFlow.Simulator_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
