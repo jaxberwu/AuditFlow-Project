@@ -5,10 +5,10 @@ using AuditFlow.Shared.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure port 5001
+// Configure port 5001 - 配置端口 5001
 builder.WebHost.UseUrls("http://localhost:5001");
 
-// Add services
+// Add services - 添加服务
 builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -24,7 +24,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure EF Core with SQL Server - INDEPENDENT DATABASE
+// Configure EF Core with SQL Server - INDEPENDENT DATABASE - 配置 EF Core 使用 SQL Server - 独立数据库
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=(localdb)\\mssqllocaldb;Database=CS_SimulatorDB;Trusted_Connection=True;MultipleActiveResultSets=true";
 
@@ -33,13 +33,13 @@ builder.Services.AddDbContext<CS_SimulatorDbContext>(options =>
 
 var app = builder.Build();
 
-// Ensure database is created and seeded
+// Ensure database is created and seeded - 确保数据库已创建并填充种子数据
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<CS_SimulatorDbContext>();
     db.Database.EnsureCreated();
     
-    // Seed random CVE threat data if empty (50-100 records)
+    // Seed random CVE threat data if empty (50-100 records) - 如果数据库为空，生成随机 CVE 威胁数据（50-100 条记录）
     if (!db.CVEThreats.Any())
     {
         var random = new Random();
@@ -56,11 +56,11 @@ using (var scope = app.Services.CreateScope())
             "Review and update access controls"
         };
         
-        // Generate 50-100 random threats
+        // Generate 50-100 random threats - 生成 50-100 个随机威胁
         var threatCount = random.Next(50, 101);
         var hostnames = new List<string>();
         
-        // Generate some hostnames (D + 5-8 alphanumeric)
+        // Generate some hostnames (D + 5-8 alphanumeric) - 生成主机名（D + 5-8 位字母数字组合）
         string GenerateHostname()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -69,13 +69,13 @@ using (var scope = app.Services.CreateScope())
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
         
-        // Generate 10-15 unique hostnames
+        // Generate 10-15 unique hostnames - 生成 10-15 个唯一主机名
         for (int i = 0; i < random.Next(10, 16); i++)
         {
             hostnames.Add(GenerateHostname());
         }
         
-        // Generate threats for these hostnames
+        // Generate threats for these hostnames - 为这些主机名生成威胁数据
         for (int i = 0; i < threatCount; i++)
         {
             var hostname = hostnames[random.Next(hostnames.Count)];
@@ -99,7 +99,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure pipeline
+// Configure pipeline - 配置中间件管道
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -108,8 +108,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseHttpsRedirection();
 
-// Minimal API endpoints
-// GET /api/v1/threats/summary
+// Minimal API endpoints - Minimal API 端点
+// GET /api/v1/threats/summary - 获取威胁摘要
 app.MapGet("/api/v1/threats/summary", async (CS_SimulatorDbContext db) =>
 {
     var threats = await db.CVEThreats.ToListAsync();
@@ -139,7 +139,7 @@ app.MapGet("/api/v1/threats/summary", async (CS_SimulatorDbContext db) =>
 .WithName("GetThreatSummary")
 .WithOpenApi();
 
-// GET /api/v1/threats/details/{hostname}
+// GET /api/v1/threats/details/{hostname} - Get threat details for specific hostname - 获取指定主机的详细威胁信息
 app.MapGet("/api/v1/threats/details/{hostname}", async (CS_SimulatorDbContext db, string hostname) =>
 {
     var threats = await db.CVEThreats

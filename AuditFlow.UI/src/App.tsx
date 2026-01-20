@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { AuditSummaryDto, ThreatDetailsDto } from './types';
 
-// Fetch audit summary
+// Fetch audit summary - 获取审计摘要
 async function fetchAuditSummary(): Promise<AuditSummaryDto> {
   const res = await fetch('http://localhost:5002/api/audit/summary', {
     method: 'GET',
@@ -17,7 +17,7 @@ async function fetchAuditSummary(): Promise<AuditSummaryDto> {
   return res.json();
 }
 
-// Fetch threat details for a specific hostname
+// Fetch threat details for a specific hostname - 获取指定主机的威胁详细信息
 function fetchThreatDetails(hostname: string): Promise<ThreatDetailsDto> {
   return fetch(`http://localhost:5001/api/v1/threats/details/${encodeURIComponent(hostname)}`, {
     method: 'GET',
@@ -243,7 +243,7 @@ function ThreatDetailsPanel({ hostname, onClose }: { hostname: string; onClose: 
 }
 
 function AuditDashboardContent() {
-  // Use useState and useEffect for stable data fetching
+  // Use useState and useEffect for stable data fetching - 使用 useState 和 useEffect 进行稳定的数据获取
   const [auditSummary, setAuditSummary] = useState<AuditSummaryDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -262,7 +262,7 @@ function AuditDashboardContent() {
       });
   }, []);
 
-  // Loading state
+  // Loading state - 加载状态
   if (loading) {
     return (
       <div style={{ 
@@ -296,7 +296,7 @@ function AuditDashboardContent() {
     );
   }
 
-  // Error state
+  // Error state - 错误状态
   if (error) {
     return (
       <div style={{ 
@@ -344,7 +344,7 @@ function AuditDashboardContent() {
     );
   }
 
-  // No data state
+  // No data state - 无数据状态
   if (!auditSummary) {
     return (
       <div style={{ 
@@ -361,7 +361,7 @@ function AuditDashboardContent() {
     );
   }
 
-  // Success state - render dashboard
+  // Success state - render dashboard - 成功状态 - 渲染仪表板
   return (
     <>
       <div style={{ 
@@ -378,7 +378,7 @@ function AuditDashboardContent() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
           padding: '24px' 
         }}>
-          {/* Header */}
+          {/* Header - 标题 */}
           <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '20px', marginBottom: '20px' }}>
             <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', margin: 0 }}>
               AuditFlow Dashboard
@@ -388,7 +388,7 @@ function AuditDashboardContent() {
             </p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Cards - 统计卡片 */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -421,7 +421,7 @@ function AuditDashboardContent() {
             </div>
           </div>
 
-          {/* Compliance Table */}
+          {/* Compliance Table - 合规性表格 */}
           <div>
             <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '16px' }}>
               Compliance Status ({auditSummary.complianceItems.length} devices)
@@ -464,7 +464,7 @@ function AuditDashboardContent() {
                       style={{ 
                         borderBottom: '1px solid #e5e7eb',
                         backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb',
-                        userSelect: 'text' // Allow text selection
+                        userSelect: 'text' // Allow text selection - 允许文本选择
                       }}
                     >
                       <td style={{ padding: '16px', fontWeight: '500', color: '#111827' }}>
@@ -477,15 +477,24 @@ function AuditDashboardContent() {
                       <td style={{ padding: '16px', color: '#6b7280' }}>{item.ageYears}</td>
                       <td style={{ padding: '16px', color: '#6b7280', textAlign: 'center' }}>
                         {item.threatCount > 0 ? (
-                          <span style={{ 
-                            padding: '4px 8px', 
-                            backgroundColor: '#fee2e2', 
-                            color: '#991b1b',
-                            borderRadius: '4px',
-                            fontWeight: '600'
-                          }}>
-                            {item.threatCount}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ 
+                              padding: '4px 8px', 
+                              backgroundColor: '#fee2e2', 
+                              color: '#991b1b',
+                              borderRadius: '4px',
+                              fontWeight: '600'
+                            }}>
+                              {item.threatCount}
+                            </span>
+                            <span style={{ 
+                              fontSize: '10px', 
+                              color: '#6b7280',
+                              fontStyle: 'italic'
+                            }}>
+                              Source: CrowdStrike
+                            </span>
+                          </div>
                         ) : (
                           <span style={{ color: '#9ca3af' }}>0</span>
                         )}
@@ -516,29 +525,38 @@ function AuditDashboardContent() {
                       </td>
                       <td style={{ padding: '16px' }}>
                         {item.threatCount > 0 ? (
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setSelectedHostname(item.hostname);
-                            }}
-                            onMouseDown={(e) => {
-                              // Prevent text selection when clicking button
-                              e.preventDefault();
-                            }}
-                            style={{ 
-                              padding: '6px 12px', 
-                              backgroundColor: '#2563eb', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '4px', 
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              userSelect: 'none' // Prevent text selection on button
-                            }}
-                          >
-                            View CVEs
-                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedHostname(item.hostname);
+                              }}
+                              onMouseDown={(e) => {
+                                // Prevent text selection when clicking button - 点击按钮时防止文本选择
+                                e.preventDefault();
+                              }}
+                              style={{ 
+                                padding: '6px 12px', 
+                                backgroundColor: '#2563eb', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '4px', 
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                userSelect: 'none' // Prevent text selection on button - 防止按钮上的文本选择
+                              }}
+                            >
+                              View CVEs
+                            </button>
+                            <span style={{ 
+                              fontSize: '10px', 
+                              color: '#6b7280',
+                              fontStyle: 'italic'
+                            }}>
+                              Source: CrowdStrike
+                            </span>
+                          </div>
                         ) : (
                           <span style={{ color: '#9ca3af' }}>-</span>
                         )}
@@ -552,7 +570,7 @@ function AuditDashboardContent() {
         </div>
       </div>
 
-      {/* Threat Details Modal */}
+      {/* Threat Details Modal - 威胁详情模态框 */}
       {selectedHostname && (
         <ThreatDetailsPanel 
           hostname={selectedHostname} 
